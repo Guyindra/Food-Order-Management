@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Details about the restaurant",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "currency": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food or drink item on the menu",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "isAvailable": { "type": "boolean" }
+      },
+      "required": ["name", "price", "category"]
+    },
+    "Table": {
+      "title": "Table",
+      "description": "Information about a restaurant table",
+      "type": "object",
+      "properties": {
+        "tableNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["empty", "occupied", "needs_cleaning"] },
+        "currentOrderId": { "type": "string" }
+      },
+      "required": ["tableNumber", "status"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order",
+      "type": "object",
+      "properties": {
+        "tableId": { "type": "string" },
+        "tableNumber": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" }
+            }
+          }
+        },
+        "status": { "type": "string", "enum": ["pending", "cooking", "ready", "served", "paid"] },
+        "total": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tableId", "items", "status", "total", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/restaurants/{restaurantId}": {
+      "schema": "Restaurant",
+      "description": "Store restaurant profile"
+    },
+    "/restaurants/{restaurantId}/menu": {
+      "schema": "MenuItem",
+      "description": "Menu items for the restaurant"
+    },
+    "/restaurants/{restaurantId}/tables": {
+      "schema": "Table",
+      "description": "Tables in the restaurant"
+    },
+    "/restaurants/{restaurantId}/orders": {
+      "schema": "Order",
+      "description": "Live orders"
+    }
+  }
+}

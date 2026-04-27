@@ -1,0 +1,6 @@
+{
+  "name": "QuickServe: Restaurant Order Hub",
+  "description": "A real-time order management system for restaurants featuring QR-code ordering, kitchen tracking, and cashier management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

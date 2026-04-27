@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Phase 3: Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'indradetha@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // MenuItem validation
+    function isValidMenuItem(data) {
+      return data.keys().hasAll(['name', 'price', 'category']) &&
+             data.name is string && data.name.size() < 100 &&
+             data.price is number && data.price >= 0 &&
+             data.category is string;
+    }
+
+    // Order validation
+    function isValidOrder(data) {
+      return data.keys().hasAll(['tableId', 'items', 'status', 'total', 'createdAt', 'updatedAt']) &&
+             data.tableId is string &&
+             data.items is list &&
+             data.status in ['pending', 'cooking', 'ready', 'served', 'paid'] &&
+             data.total is number &&
+             data.total >= 0 &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    match /restaurants/{restaurantId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /menu/{itemId} {
+        allow read: if true;
+        allow write: if isAdmin() && isValidMenuItem(incoming());
+      }
+
+      match /tables/{tableId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /orders/{orderId} {
+        // Allow public read for demo simplicity
+        allow read: if true;
+        
+        // Anyone can create an order in the demo
+        allow create: if isValidOrder(incoming());
+        
+        allow update: if (
+            // Relaxed for demo: anyone can update the order so staff and customers don't need auth
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) ||
+            (
+              existing().status == 'pending' && 
+              incoming().diff(existing()).affectedKeys().hasAll(['items', 'total', 'updatedAt'])
+            ) ||
+            isAdmin()
+        );
+        
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}
