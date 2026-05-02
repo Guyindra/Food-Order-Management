@@ -1,17 +1,58 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-body: "Be Vietnam Pro", sans-serif;
+  --font-headline: "Plus Jakarta Sans", sans-serif;
   
   --color-brand-orange: #FF6B35;
   --color-brand-teal: #2EC4B6;
   --color-brand-yellow: #FFBE0B;
-  --color-brand-bg: #FFFBF0;
-  --color-brand-border: #EEDDCC;
-  --color-brand-text: #2D2D2D;
-  --color-brand-muted: #887766;
+  --color-brand-bg: var(--bg);
+  --color-brand-surface: var(--surface);
+  --color-brand-border: var(--border);
+  --color-brand-text: var(--text);
+  --color-brand-muted: var(--muted);
+
+  --color-kitchen-bg: #fff8f6;
+  --color-kitchen-primary: #9c442e;
+  --color-kitchen-primary-container: #ffac98;
+  --color-kitchen-primary-fixed: #ffac98;
+  --color-kitchen-on-primary: #fff7f6;
+  --color-kitchen-secondary: #406376;
+  --color-kitchen-secondary-container: #c3e8fd;
+  --color-kitchen-secondary-fixed: #c3e8fd;
+  --color-kitchen-tertiary: #006783;
+  --color-kitchen-tertiary-fixed: #61d4ff;
+  --color-kitchen-on-surface: #512712;
+  --color-kitchen-on-surface-variant: #86523a;
+  --color-kitchen-surface-container-lowest: #ffffff;
+  --color-kitchen-surface-container-highest: #ffdbcc;
+  --color-kitchen-surface-container: #ffe9e1;
+  --color-kitchen-surface-variant: #ffdbcc;
+  --color-kitchen-surface-dim: #ffd0bc;
+  --color-kitchen-surface-tint: #9c442e;
+  --color-kitchen-error: #ac3149;
+  --color-kitchen-error-container: #f76a80;
+}
+
+:root {
+  --bg: #FFFBF0;
+  --surface: #ffffff;
+  --border: #EEDDCC;
+  --text: #2D2D2D;
+  --muted: #887766;
+}
+
+.dark {
+  --bg: #121212;
+  --surface: #1E1E1E;
+  --border: #333333;
+  --text: #F3F4F6;
+  --muted: #9CA3AF;
 }
 
 @layer base {
@@ -30,7 +71,7 @@
   }
   
   .vibrant-card {
-    @apply bg-white border-2 border-brand-border rounded-3xl shadow-sm transition-all;
+    @apply bg-brand-surface border-2 border-brand-border rounded-3xl shadow-sm transition-all;
   }
 
   .vibrant-button-primary {
@@ -38,6 +79,6 @@
   }
 
   .vibrant-button-secondary {
-    @apply bg-white border-2 border-brand-orange text-brand-orange py-4 rounded-2xl font-black text-lg hover:bg-brand-orange/5 transition-all;
+    @apply bg-brand-surface border-2 border-brand-orange text-brand-orange py-4 rounded-2xl font-black text-lg hover:bg-brand-orange/5 transition-all;
   }
 }

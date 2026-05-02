@@ -35,6 +35,7 @@ export interface Order {
   id: string;
   tableId: string;
   tableNumber: string;
+  customerName?: string;
   items: OrderItem[];
   status: OrderStatus;
   total: number;
@@ -46,7 +47,8 @@ export enum UserRole {
   CUSTOMER = 'customer',
   KITCHEN = 'kitchen',
   CASHIER = 'cashier',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
+  DASHBOARD = 'dashboard'
 }
 
 export enum OperationType {
