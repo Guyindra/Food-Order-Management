@@ -26,8 +26,6 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
   const [cart, setCart] = useState<{item: MenuItem, quantity: number}[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All Items');
 
-  const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
-
   const categories = useMemo(() => {
     return ['All Items', ...Array.from(new Set(menuItems.map(m => m.category)))];
   }, [menuItems]);
@@ -73,6 +71,10 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
     });
   };
 
+  const cartTotal = useMemo(() => {
+    return cart.reduce((sum, c) => sum + (c.item.price * c.quantity), 0);
+  }, [cart]);
+
   const handlePlaceOrder = async () => {
     if (cart.length === 0) return;
     if (onPlaceOrder) {
@@ -87,7 +89,7 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
           quantity: c.quantity
         })),
         status: OrderStatus.PENDING,
-        total: cart.reduce((sum, c) => sum + (c.item.price * c.quantity), 0)
+        total: cartTotal
       });
       setCart([]);
       setTakeawayCustomerName('');
@@ -240,7 +242,7 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
                       </div>
                       <div>
                         <h4 className="font-label-lg text-kitchen-on-surface font-semibold">{item.name}</h4>
-                        <p className="font-label-md text-kitchen-primary font-bold">RM {item.price.toFixed(2)}</p>
+                        <p className="font-label-md text-kitchen-primary font-bold">${item.price.toFixed(2)}</p>
                       </div>
                     </button>
                   ))}
@@ -278,7 +280,7 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
                   <div key={c.item.id} className="flex flex-col gap-2 p-4 bg-kitchen-surface-container rounded-2xl border border-kitchen-surface-container-highest">
                     <div className="flex justify-between items-start">
                       <h4 className="font-semibold text-sm text-kitchen-on-surface">{c.item.name}</h4>
-                      <span className="font-semibold text-sm text-kitchen-on-surface">RM {(c.item.price * c.quantity).toFixed(2)}</span>
+                      <span className="font-semibold text-sm text-kitchen-on-surface">${(c.item.price * c.quantity).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <button onClick={() => updateCartQty(c.item.id, -1)} className="w-8 h-8 rounded-lg bg-kitchen-surface-container-highest text-kitchen-on-surface-variant hover:text-kitchen-primary hover:bg-kitchen-surface-container-lowest flex items-center justify-center transition-colors">
@@ -299,7 +301,7 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
                 <div className="flex justify-between items-end">
                   <span className="font-headline text-xl font-bold text-kitchen-on-surface">Total</span>
                   <span className="font-headline text-3xl font-bold text-kitchen-primary">
-                    RM {cart.reduce((sum, c) => sum + (c.item.price * c.quantity), 0).toFixed(2)}
+                    ${cart.reduce((sum, c) => sum + (c.item.price * c.quantity), 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -357,7 +359,7 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
                     </div>
                   </div>
                   <span className="font-semibold text-sm text-kitchen-on-surface">
-                    RM {(item.price * item.quantity).toFixed(2)}
+                    ${(item.price * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -369,17 +371,17 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-sm text-kitchen-on-surface-variant font-medium">
                   <span>Subtotal</span>
-                  <span>RM {selectedCheckoutOrder.total.toFixed(2)}</span>
+                  <span>${selectedCheckoutOrder.total.toFixed(2)}</span>
                 </div>
                 {/* Visual tax mockup for design fidelity */}
                 <div className="flex justify-between text-sm text-kitchen-on-surface-variant font-medium">
                   <span>Tax (Included)</span>
-                  <span>RM {(selectedCheckoutOrder.total * 0.1).toFixed(2)}</span>
+                  <span>${(selectedCheckoutOrder.total * 0.1).toFixed(2)}</span>
                 </div>
                 <div className="h-[1px] w-full bg-kitchen-outline-variant/50 my-1"></div>
                 <div className="flex justify-between items-end">
                   <span className="font-headline text-xl font-bold text-kitchen-on-surface">Total</span>
-                  <span className="font-headline text-3xl font-bold text-kitchen-primary">RM {selectedCheckoutOrder.total.toFixed(2)}</span>
+                  <span className="font-headline text-3xl font-bold text-kitchen-primary">${selectedCheckoutOrder.total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -399,7 +401,6 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
               <button 
                 onClick={() => {
                   updateOrderStatus(selectedCheckoutOrder.id, OrderStatus.PAID);
-                  setReceiptModalOrder(selectedCheckoutOrder);
                   showToast(`${selectedCheckoutOrder.tableNumber === 'Takeaway' ? 'Takeaway' : `Table ${selectedCheckoutOrder.tableNumber}`} Paid!`);
                   setSelectedCheckoutOrder(null);
                 }}
@@ -412,84 +413,6 @@ export const CashierBoard: React.FC<CashierBoardProps> = ({
           </>
         )}
       </aside>
-
-      {/* E-Receipt Modal */}
-      <AnimatePresence>
-        {receiptModalOrder && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfaf6] text-[#333] p-8 rounded-lg max-w-sm w-full font-mono shadow-2xl relative"
-            >
-              {/* Paper zig-zag effect top & bottom */}
-              <div className="absolute top-[-4px] left-0 right-0 h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PScxMCc+PHBvbHlnb24gcG9pbnRzPScwLDEwIDYsMCAxMiwxMCcgZmlsbD0nI2ZkZmFmNicvPjwvc3ZnPg==')] repeat-x bg-[length:12px_10px]"></div>
-              
-              <div className="text-center mb-6 pt-2">
-                <h2 className="text-2xl font-black mb-1">QUICKSERVE SMB</h2>
-                <p className="text-xs text-gray-600">123 Baker Street, CA</p>
-                <p className="text-xs text-gray-600">Tel: (555) 123-4567</p>
-              </div>
-              
-              <div className="text-xs border-b-2 border-dashed border-gray-300 pb-4 mb-4 space-y-1">
-                <div className="flex justify-between"><span>ORDER ID:</span> <span className="font-bold">{receiptModalOrder.id}</span></div>
-                <div className="flex justify-between"><span>DATE:</span> <span>{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</span></div>
-                <div className="flex justify-between"><span>TABLE:</span> <span>{receiptModalOrder.tableNumber}</span></div>
-                {receiptModalOrder.customerName && <div className="flex justify-between"><span>CUSTOMER:</span> <span>{receiptModalOrder.customerName}</span></div>}
-              </div>
-              
-              <div className="mb-4 text-sm space-y-2">
-                <div className="flex justify-between font-bold border-b border-gray-200 pb-1 mb-2">
-                  <span>ITEM</span>
-                  <span>AMT</span>
-                </div>
-                {receiptModalOrder.items.map(item => (
-                  <div key={item.id} className="flex justify-between items-start">
-                    <span className="pr-4">{item.quantity}x {item.name}</span>
-                    <span className="shrink-0 text-right">RM {(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="text-sm border-t-2 border-dashed border-gray-300 pt-4 mb-8">
-                <div className="flex justify-between text-gray-600 mb-1">
-                  <span>Subtotal</span>
-                  <span>RM {receiptModalOrder.total.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600 mb-2">
-                  <span>Tax (Included)</span>
-                  <span>RM {(receiptModalOrder.total * 0.1).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-black text-xl mt-3 pt-2 border-t border-gray-300">
-                  <span>TOTAL</span>
-                  <span>RM {receiptModalOrder.total.toFixed(2)}</span>
-                </div>
-              </div>
-              
-              <div className="text-center text-xs mb-8 font-medium space-y-1">
-                <div className="flex justify-center mb-3">
-                  <Receipt className="w-8 h-8 text-gray-300" />
-                </div>
-                <p>Thank you for your visit!</p>
-                <p className="text-gray-500">Please come again</p>
-              </div>
-              
-              <div className="flex gap-4">
-                 <button onClick={() => window.print()} className="flex-1 border-2 border-gray-800 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors uppercase tracking-wider text-xs">Print</button>
-                 <button onClick={() => setReceiptModalOrder(null)} className="flex-1 bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition-colors uppercase tracking-wider text-xs shadow-xl">Close</button>
-              </div>
-
-              <div className="absolute bottom-[-5px] left-0 right-0 h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PScxMCc+PHBvbHlnb24gcG9pbnRzPScwLDEwIDYsMCAxMiwxMCcgZmlsbD0nI2ZkZmFmNicvPjwvc3ZnPg==')] repeat-x bg-[length:12px_10px] rotate-180"></div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -1,3 +1,5 @@
+import type { Timestamp, FieldValue } from 'firebase/firestore';
+
 export enum OrderStatus {
   PENDING = 'pending',
   COOKING = 'cooking',
@@ -39,8 +41,8 @@ export interface Order {
   items: OrderItem[];
   status: OrderStatus;
   total: number;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Timestamp | FieldValue | Date | number | string;
+  updatedAt: Timestamp | FieldValue | Date | number | string;
 }
 
 export enum UserRole {
@@ -51,28 +53,4 @@ export enum UserRole {
   DASHBOARD = 'dashboard'
 }
 
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
 
-export interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
-  }
-}

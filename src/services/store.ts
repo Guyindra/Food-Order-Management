@@ -10,7 +10,7 @@ const ORDERS_PATH = `restaurants/${RESTAURANT_ID}/orders`;
 
 export const addMenuItem = async (item: Omit<MenuItem, 'id'>) => {
   try {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = crypto.randomUUID();
     await setDoc(doc(db, MENU_PATH, id), { id, ...item });
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, MENU_PATH);
@@ -27,7 +27,7 @@ export const deleteMenuItem = async (id: string) => {
 
 export const addTable = async (table: Pick<Table, 'tableNumber'>) => {
   try {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = crypto.randomUUID();
     await setDoc(doc(db, TABLES_PATH, id), { id, tableNumber: table.tableNumber, status: 'empty' });
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, TABLES_PATH);
@@ -44,10 +44,7 @@ export const deleteTable = async (id: string) => {
 
 export const placeOrder = async (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
-    const uuid = typeof crypto !== 'undefined' && crypto.randomUUID 
-      ? crypto.randomUUID().split('-')[0].toUpperCase() 
-      : Math.random().toString(36).substr(2, 8).toUpperCase();
-    const id = `ORD-${new Date().toISOString().slice(2,10).replace(/-/g, '')}-${uuid}`;
+    const id = crypto.randomUUID();
     await setDoc(doc(db, ORDERS_PATH, id), { 
       id, 
       ...order, 
@@ -85,7 +82,7 @@ export const initDemo = async () => {
         // Add tables
         const tableIds: string[] = [];
         for (const t of ['1', '2', '3']) {
-            const id = Math.random().toString(36).substr(2, 9);
+            const id = crypto.randomUUID();
             await setDoc(doc(db, TABLES_PATH, id), { id, tableNumber: t, status: "empty" });
             tableIds.push(id);
         }
@@ -100,7 +97,7 @@ export const initDemo = async () => {
         ];
 
         for(const m of demoMenus) {
-            const id = Math.random().toString(36).substr(2, 9);
+            const id = crypto.randomUUID();
             await setDoc(doc(db, MENU_PATH, id), {
                 id, name: m.name, price: m.price, category: m.category, description: m.description, isAvailable: true, image: m.image
             });

@@ -15,7 +15,7 @@ export const KitchenBoard: React.FC<KitchenBoardProps> = ({ orders, updateOrderS
     orders.filter(o => [OrderStatus.PENDING, OrderStatus.COOKING, OrderStatus.READY].includes(o.status)),
   [orders]);
   
-  const loadPercentage = Math.min(Math.round((activeOrders.length / 20) * 100), 100);
+  const loadPercentage = useMemo(() => Math.min(Math.round((activeOrders.length / 20) * 100), 100), [activeOrders]);
 
   const getOrderIcon = (order: Order) => {
     // Simple heuristic to get an icon based on items

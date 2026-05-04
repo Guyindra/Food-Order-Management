@@ -5,21 +5,25 @@ import {
   Filter, QrCode, Printer
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Table, MenuItem } from '../types';
+import { Table, MenuItem, Order, OrderStatus } from '../types';
 import { addMenuItem, deleteMenuItem, addTable, deleteTable, initDemo } from '../services/store';
 
 interface AdminBoardProps {
   tables: Table[];
   menuItems: MenuItem[];
+  orders: Order[];
+  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   baseUrl: string;
   showToast: (message: string) => void;
 }
 
-export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, baseUrl, showToast }) => {
+export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, orders, updateOrderStatus, baseUrl, showToast }) => {
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const [customIpTarget, setCustomIpTarget] = useState(baseUrl);
   const [activeTab, setActiveTab] = useState<'menu' | 'table' | 'promotions'>('menu');
+  const [activeMenuSubTab, setActiveMenuSubTab] = useState<'items' | 'orders'>('items');
   const [activeFilter, setActiveFilter] = useState('All Items');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'All'>('All');
   
   // States for adding new item
   const [newItemName, setNewItemName] = useState('');
@@ -107,8 +111,25 @@ export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, baseU
         {/* MENU MANAGEMENT TAB */}
         {/* ========================================= */}
         {activeTab === 'menu' && (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-            {/* Left Area: Menu Grid (Spans 8 columns) */}
+          <div className="flex flex-col gap-6">
+            <div className="flex bg-[#fff1ec] w-fit p-1 rounded-xl shadow-inner border border-[#ffe9e1]">
+              <button 
+                onClick={() => setActiveMenuSubTab('items')} 
+                className={`px-6 py-2.5 font-headline font-bold text-sm rounded-lg transition-all ${activeMenuSubTab === 'items' ? 'bg-white shadow-sm text-[#9c442e]' : 'text-[#86523a] hover:text-[#512712]'}`}
+              >
+                Menu Items
+              </button>
+              <button 
+                onClick={() => setActiveMenuSubTab('orders')} 
+                className={`px-6 py-2.5 font-headline font-bold text-sm rounded-lg transition-all ${activeMenuSubTab === 'orders' ? 'bg-white shadow-sm text-[#9c442e]' : 'text-[#86523a] hover:text-[#512712]'}`}
+              >
+                Live Orders
+              </button>
+            </div>
+
+            {activeMenuSubTab === 'items' && (
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                {/* Left Area: Menu Grid (Spans 8 columns) */}
             <div className="xl:col-span-8 flex flex-col gap-8">
               {/* Section Header */}
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -168,7 +189,7 @@ export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, baseU
                         
                         <div className="flex items-end justify-between mt-auto">
                           <span className="font-headline text-2xl font-black text-[#9c442e]">
-                            RM {item.price.toFixed(2)}
+                            ${item.price.toFixed(2)}
                           </span>
                           <div className="flex gap-2">
                             <button 
@@ -231,7 +252,7 @@ export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, baseU
                   <div className="flex flex-col gap-2">
                     <label className="font-body text-sm font-bold text-[#86523a] ml-1">Price</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86523a] font-headline font-bold">RM</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86523a] font-headline font-bold">$</span>
                       <input 
                         value={newItemPrice}
                         onChange={e => setNewItemPrice(e.target.value)}
@@ -283,6 +304,108 @@ export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, baseU
                 </button>
               </form>
             </aside>
+          </div>
+            )}
+
+            {activeMenuSubTab === 'orders' && (
+              <div className="flex flex-col gap-8">
+                {/* Header and Filter */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-headline text-3xl font-bold text-[#512712]">Active Orders</h2>
+                    <p className="font-body text-[#86523a] mt-1 font-medium">Monitor and manage kitchen workflow.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {['All', OrderStatus.PENDING, OrderStatus.COOKING, OrderStatus.READY, OrderStatus.SERVED, OrderStatus.PAID].map(status => (
+                      <button 
+                        key={status}
+                        onClick={() => setOrderStatusFilter(status as any)}
+                        className={`font-body text-sm font-semibold px-4 py-2 rounded-full transition-colors capitalize ${
+                          orderStatusFilter === status 
+                            ? 'bg-[#9c442e] text-[#fff7f6] shadow-md' 
+                            : 'bg-[#ffe9e1] text-[#512712] hover:bg-[#ffdbcc]'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Orders Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {orders
+                    .filter(o => orderStatusFilter === 'All' || o.status === orderStatusFilter)
+                    .sort((a, b) => {
+                       const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime();
+                       const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime();
+                       return bTime - aTime;
+                    })
+                    .map(order => (
+                    <div key={order.id} className="bg-white rounded-[24px] shadow-[0_4px_24px_rgba(187,91,67,0.06)] border-2 border-[#ffe9e1] p-6 flex flex-col gap-4">
+                      {/* Order Header */}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-headline text-2xl font-bold text-[#512712]">T{order.tableNumber}</span>
+                          <p className="font-body text-xs text-[#86523a] mt-1">
+                            {new Date(order.createdAt?.toDate ? order.createdAt.toDate() : order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <span className={`font-headline text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider
+                          ${order.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                            order.status === OrderStatus.COOKING ? 'bg-orange-100 text-orange-800' :
+                            order.status === OrderStatus.READY ? 'bg-green-100 text-green-800' :
+                            order.status === OrderStatus.SERVED ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }
+                        `}>
+                          {order.status}
+                        </span>
+                      </div>
+                      
+                      {/* Order Items */}
+                      <div className="flex-1 overflow-y-auto max-h-[150px] scrollbar-none border-y border-[#ffe9e1] py-3 -my-1">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-center mb-2 last:mb-0">
+                            <div className="flex gap-2">
+                              <span className="font-headline font-bold text-[#86523a]">{item.quantity}x</span>
+                              <span className="font-body font-medium text-[#512712] truncate max-w-[120px]" title={item.name}>{item.name}</span>
+                            </div>
+                            <span className="font-headline font-semibold text-[#86523a]">${(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Total & Action */}
+                      <div className="flex items-end justify-between pt-2">
+                        <div className="flex flex-col">
+                          <span className="font-body text-xs font-bold text-[#86523a] uppercase tracking-wide">Total</span>
+                          <span className="font-headline text-xl font-black text-[#9c442e]">${order.total.toFixed(2)}</span>
+                        </div>
+                        
+                        <select 
+                          value={order.status}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
+                          className="bg-[#ffe9e1] border border-[#ffdbcc] text-[#512712] font-headline text-sm font-semibold rounded-lg px-2.5 py-1.5 outline-none cursor-pointer focus:ring-2 focus:ring-[#9c442e]/50"
+                        >
+                          <option value={OrderStatus.PENDING}>Pending</option>
+                          <option value={OrderStatus.COOKING}>Cooking</option>
+                          <option value={OrderStatus.READY}>Ready</option>
+                          <option value={OrderStatus.SERVED}>Served</option>
+                          <option value={OrderStatus.PAID}>Paid</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {orders.filter(o => orderStatusFilter === 'All' || o.status === orderStatusFilter).length === 0 && (
+                    <div className="col-span-full py-12 text-center text-[#86523a]">
+                      <p className="font-headline font-medium text-lg">No orders found for this status.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -694,7 +817,7 @@ export const AdminBoard: React.FC<AdminBoardProps> = ({ tables, menuItems, baseU
                     </div>
                     <div>
                       <h4 className="font-headline text-[20px] font-bold leading-snug text-[#512712] mb-2">Holiday Box Pre-order</h4>
-                      <p className="font-body text-sm font-medium text-[#86523a] mb-6 line-clamp-2">RM 5 off when customers pre-order the assorted holiday pastry box before November.</p>
+                      <p className="font-body text-sm font-medium text-[#86523a] mb-6 line-clamp-2">$5 off when customers pre-order the assorted holiday pastry box before November.</p>
                       
                       <div className="flex items-center justify-between border-t border-[#ffdbcc] pt-4">
                         <div className="flex flex-col">
