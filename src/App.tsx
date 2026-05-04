@@ -47,7 +47,12 @@ import { AdminBoard } from './components/AdminBoard';
 import { MainDashboard } from './components/MainDashboard';
 
 export default function App() {
-  const [role, setRole] = useState<UserRole>(UserRole.DASHBOARD);
+  const [role, setRole] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('tableId')) {
+      return UserRole.CUSTOMER;
+    }
+    return UserRole.DASHBOARD;
+  });
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   useEffect(() => {
@@ -335,6 +340,22 @@ export default function App() {
         {role === UserRole.CUSTOMER && (
           <div className="flex-1 flex flex-col md:flex-row h-full">
             {!selectedTable ? (
+               isPublicCustomer ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#fff8f6]">
+                  {tables.length === 0 ? (
+                    <>
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mb-4"></div>
+                      <p className="text-brand-orange font-bold">Loading your table...</p>
+                    </>
+                  ) : (
+                    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm">
+                      <QrCode className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                      <h2 className="text-2xl font-bold mb-2">Invalid QR Code</h2>
+                      <p className="text-gray-500 mb-6">This table could not be found. Please ask staff for assistance or scan the code again.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
                 <div className="max-w-md">
                   <div className="relative inline-block mb-6">
@@ -362,6 +383,7 @@ export default function App() {
                   )}
                 </div>
               </div>
+              )
             ) : (isPublicCustomer || selectedTable.id === 'takeaway') && !customerName ? (
               <div className="flex-1 w-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500 min-h-full relative overflow-y-auto bg-brand-bg">
                 <main className="w-full max-w-md min-h-full h-full bg-[#fff8f6] shadow-xl relative flex flex-col mx-auto shrink-0">
